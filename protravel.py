@@ -1,9 +1,9 @@
 import requests
 from requests.exceptions import HTTPError
 import re
-import sys
 import os.path
 import argparse
+
 
 class HttpClient:
     def __init__(self, arguments):
@@ -28,8 +28,22 @@ def write_file(dest, response):
         os.makedirs(dest_dir)
     except FileExistsError:
         pass
-    with open(dest, "wb") as fp:
+
+    mode = "wb"
+    if isinstance(response, str):
+        mode = "w"
+
+    with open(dest, mode) as fp:
         fp.write(response)
+
+
+def read_file(path):
+    try:
+        with open(path, "r") as fp:
+            return {l.strip() for l in fp.readlines()}
+    except FileNotFoundError:
+        return set()
+
 
 def should_try_download(path):
     if path.startswith("/dev/"):
@@ -40,6 +54,7 @@ def should_try_download(path):
 
     return True
 
+
 def find_files(content):
     matches = re.findall(b"/[a-z]+/[a-zA-Z0-9._/-]+", content)
     return {m.decode("ASCII") for m in matches if should_try_download(m.decode("ASCII"))}
@@ -49,30 +64,39 @@ class Spider:
     def __init__(self, client, args):
         self.client = client
         self.save_dir = args.save_dir
-        self.done = find_existing_files(self.save_dir)
-        with open(args.filelist) as fp:
-            self.queue = {p.strip() for p in fp.readlines()}
+        self.done_file = os.path.join(self.save_dir, ".done.txt")
+        self.queue_file = os.path.join(self.save_dir, ".queue.txt")
+
+        self.done = read_file(self.done_file)
+        self.queue = read_file(args.filelist) | read_file(self.queue_file)
         self.queue -= self.done
 
+    def save_state(self):
+        write_file(self.queue_file, "\n".join(self.queue))
+        write_file(self.done_file, "\n".join(self.done))
+
     def spider(self):
-        while self.queue:
-            path = self.queue.pop()
-            try:
-                print("  " + path, end="\r")
-                response = self.client.request_file(path)
-                if response:
-                    write_file(self.save_dir + path, response)
-                    print("\u2713 " + path)
-                else:
-                    print("0 " + path)
+        try:
+            while self.queue:
+                path = self.queue.pop()
+                try:
+                    print("  " + path, end="\r")
+                    response = self.client.request_file(path)
+                    if response:
+                        write_file(self.save_dir + path, response)
+                        print("\u2713 " + path)
+                    else:
+                        print("0 " + path)
 
-                files = find_files(response)
-                remain = files - self.done
-                self.queue |= remain
-            except (HTTPError, FileNotFoundError) as e:
-                print("\u274c " + path)
+                    files = find_files(response)
+                    remain = files - self.done
+                    self.queue |= remain
+                except (HTTPError, FileNotFoundError) as e:
+                    print("\u274c " + path)
 
-            self.done.add(path)
+                self.done.add(path)
+        finally:
+            self.save_state()
 
         print("Done")
 
@@ -85,16 +109,11 @@ def parse_arguments():
     parser.add_argument("url", help="URL to attack")
     return parser.parse_args()
 
+
 def path_to_absolute(save_dir, path_in_save_dir):
     assert path_in_save_dir.startswith(save_dir)
     return path_in_save_dir[len(save_dir.rstrip('/')):]
 
-def find_existing_files(save_dir):
-    done = set()
-    for root, dirs, files in os.walk(save_dir):
-        for filename in files:
-            done.add(path_to_absolute(save_dir, os.path.join(root, filename)))
-    return done
 
 if __name__ == "__main__":
     args = parse_arguments()
