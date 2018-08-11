@@ -55,9 +55,16 @@ def should_try_download(path):
     return True
 
 
-def find_files(content):
-    matches = re.findall(b"/[a-z]+/[a-zA-Z0-9._/-]+", content)
-    return {m.decode("ASCII") for m in matches if should_try_download(m.decode("ASCII"))}
+def resolve_relative_path(origin_path, relative_path):
+    return os.path.normpath(os.path.join(os.path.dirname(origin_path), relative_path))
+
+
+def find_files(path, content):
+    matches = re.findall(b"[./]*/[a-z]+/[a-zA-Z0-9._/-]+", content)
+    matches = [m.decode("ASCII") for m in matches]
+    matches = [resolve_relative_path(path, m) for m in matches]
+    matches = filter(should_try_download, matches)
+    return set(matches)
 
 
 handlers = {}
@@ -130,7 +137,7 @@ class Spider:
                     else:
                         print("0 " + path)
 
-                    files = find_files(response)
+                    files = find_files(path, response)
                     remain = files - self.done
                     self.queue |= remain
                 except (HTTPError, FileNotFoundError) as e:
