@@ -104,10 +104,37 @@ def passwd(content):
     return queue
 
 
+
+@filehandler("/etc/shadow")
+def shadow(content):
+    if content.startswith(b'root'):
+        print("* Shadow file potentially contains password hashes")
+
+
+@filehandler("/proc/version")
+def version(content):
+    print_first_line(content)
+
+
+@filehandler("/proc/self/environ")
+def environ(content):
+    lines = content.split(b"\0")
+    print("* Environment variables:")
+    for line in lines:
+        print("      " + line.decode("ASCII"))
+
+
+def print_first_line(content):
+    line, rest = content.split(b"\n", 1)
+    print("* " + line.decode("ASCII"))
+
+
 def call_handlers(path, content):
     queue = set()
     if path in handlers:
-        queue |= handlers[path](content)
+        more_files = handlers[path](content)
+        if more_files is not None:
+            queue |= more_files
     return queue
 
 
@@ -137,8 +164,8 @@ class Spider:
                     response = self.client.request_file(path)
                     if response:
                         write_file(self.save_dir + path, response)
-                        self.queue |= call_handlers(path, response)
                         print("\u2713 " + path)
+                        self.queue |= call_handlers(path, response)
                     else:
                         print("0 " + path)
 
