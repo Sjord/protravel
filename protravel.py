@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
-import requests
-from requests.exceptions import HTTPError
-import re
-import os.path
 import argparse
+import os.path
+import re
+import requests
+import sys
+from requests.exceptions import HTTPError
 
 
 class HttpClient:
@@ -130,7 +131,9 @@ class Spider:
             while self.queue:
                 path = self.queue.pop()
                 try:
-                    print("  " + path, end="\r")
+                    if sys.stdout.isatty():
+                        print("  " + path, end="\r")
+
                     response = self.client.request_file(path)
                     if response:
                         write_file(self.save_dir + path, response)
