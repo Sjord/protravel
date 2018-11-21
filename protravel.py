@@ -80,6 +80,15 @@ def filehandler(pattern):
     return decorator
 
 
+class NotFilePathError(ValueError):
+    pass
+
+
+def assert_is_path(path):
+    if not path.startswith("/"):
+        raise NotFilePathError()
+
+
 @filehandler("/etc/passwd")
 def passwd(content):
     queue = set()
@@ -88,6 +97,7 @@ def passwd(content):
         try:
             parts = line.split(":")
             homedir = parts[5]
+            assert_is_path(homedir)
             queue |= {os.path.join(homedir, f) for f in [
                 ".netrc",
                 ".ssh/id_rsa",
@@ -99,7 +109,7 @@ def passwd(content):
                 ".bash_profile",
                 ".bashrc",
             ]}
-        except IndexError:
+        except (IndexError, NotFilePathError):
             pass
     return queue
 
@@ -157,6 +167,7 @@ class Spider:
         try:
             while self.queue:
                 path = self.queue.pop()
+                assert_is_path(path)
                 try:
                     if sys.stdout.isatty():
                         print("  " + path, end="\r")
