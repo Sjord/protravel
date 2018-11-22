@@ -63,6 +63,7 @@ def resolve_relative_path(origin_path, relative_path):
 
 
 def find_files(path, content):
+    content = content[:10_000_000]
     matches = re.findall(b"[./]*/[a-z]+/[a-zA-Z0-9._/-]+", content)
     matches = [m.decode("ASCII") for m in matches]
     matches = [resolve_relative_path(path, m) for m in matches]
