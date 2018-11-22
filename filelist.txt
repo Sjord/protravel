@@ -31,3 +31,4 @@
 /var/lib/mlocate/mlocate.db
 /var/log/dmesg
 /var/log/messages
+/var/log/system.log
