@@ -6,6 +6,8 @@
 /etc/httpd/conf.d/ssl.conf
 /etc/httpd/conf.d/vhost.conf
 /etc/httpd/conf/httpd.conf
+/etc/init.d/rcS
+/etc/inittab
 /etc/issue
 /etc/motd
 /etc/mysql/my.cnf
@@ -32,3 +34,5 @@
 /var/log/dmesg
 /var/log/messages
 /var/log/system.log
+/etc/fstab
+/etc/inetd.conf
