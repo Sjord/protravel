@@ -132,10 +132,31 @@ def version(content):
 
 @filehandler("/proc/self/environ")
 def environ(content):
-    lines = content.split(b"\0")
-    print("* Environment variables:")
+    lines = content.rstrip(b"\0").split(b"\0")
+    pairs = []
     for line in lines:
-        print("      " + line.decode("ASCII"))
+        key, value = line.decode("ASCII").split("=", 1)
+        pairs.append((key, value))
+    print_environ(pairs)
+    add_environ_files(pairs)
+
+
+def print_environ(pairs):
+    print("* Environment variables:")
+    for kv in pairs:
+        print("      %s=%s" % kv)
+
+
+def add_environ_files(pairs):
+    templates = {
+        "CATALINA_HOME": ["conf/server.xml"],
+        "CATALINA_BASE": ["conf/server.xml"],
+    }
+    queue = set()
+    for key, value in pairs:
+        if key in templates:
+            queue |= {os.path.join(value, f) for f in templates[key]}
+    return queue
 
 
 def print_first_line(content):
