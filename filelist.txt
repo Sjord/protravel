@@ -36,3 +36,4 @@
 /var/log/system.log
 /etc/fstab
 /etc/inetd.conf
+/etc/rsyslog.conf

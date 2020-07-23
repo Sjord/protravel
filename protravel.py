@@ -88,7 +88,7 @@ class NotFilePathError(ValueError):
 
 def assert_is_path(path):
     if not path.startswith("/"):
-        raise NotFilePathError()
+        raise NotFilePathError(path)
 
 
 @filehandler("/etc/passwd")
