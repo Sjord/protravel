@@ -1,11 +1,14 @@
+/etc/apache2/apache2.conf
 /etc/apt/sources.list
 /etc/centos-release
 /etc/debian_version
+/etc/fstab
 /etc/group
 /etc/hosts
 /etc/httpd/conf.d/ssl.conf
 /etc/httpd/conf.d/vhost.conf
 /etc/httpd/conf/httpd.conf
+/etc/inetd.conf
 /etc/init.d/rcS
 /etc/inittab
 /etc/issue
@@ -15,6 +18,7 @@
 /etc/passwd
 /etc/rc.d/rc.local
 /etc/redhat-release
+/etc/rsyslog.conf
 /etc/shadow
 /etc/system-release
 /etc/yum.conf
@@ -27,6 +31,7 @@
 /proc/net/tcp
 /proc/net/udp
 /proc/sched_debug
+/proc/self/cmdline
 /proc/self/environ
 /proc/version
 /var/cache/locate/locatedb
@@ -34,6 +39,4 @@
 /var/log/dmesg
 /var/log/messages
 /var/log/system.log
-/etc/fstab
-/etc/inetd.conf
-/etc/rsyslog.conf
+/var/www/html/index.html
