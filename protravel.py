@@ -19,7 +19,10 @@ class HttpClient:
 
     def request_file(self, path):
         url = self.base_url + path
-        response = self.session.get(url, allow_redirects=False)
+        request = requests.Request(method="GET", url=url)
+        prepped = self.session.prepare_request(request)
+        prepped.url = url
+        response = self.session.send(prepped, allow_redirects=False)
         if response.status_code != 200:
             raise FileNotFoundError(path)
         return response.content
